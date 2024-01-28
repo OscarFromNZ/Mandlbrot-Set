@@ -2,10 +2,15 @@ class Game {
     constructor(canvas, context, constants) {
         this.canvas = canvas;
         this.context = context;
+
         this.balls = [];
         this.grids = [];
+
         this.gameLoop = this.gameLoop.bind(this);
         this.constants = constants;
+
+        this.makeBalls();
+        this.makeGrids();
     }
 
     makeBalls() {
@@ -104,6 +109,14 @@ class Game {
             ball.draw();
         }
 
+        if (this.isIntersecting(this.balls[0], this.balls[1])) {
+            this.balls[0].velocity.x *= -1;
+            this.balls[0].velocity.y *= -1;
+
+            this.balls[1].velocity.x *= -1;
+            this.balls[1].velocity.y *= -1;
+        }
+
         requestAnimationFrame(this.gameLoop);
     }
 
@@ -135,37 +148,17 @@ class Game {
             return corner.x >= square.x && corner.x <= square.x + square.sideLength && corner.y >= square.y && corner.y <= square.y + square.sideLength;
         }
     
-        let cornersSquare1 = [
+        let cornersSquare = [
             { x: square1.x, y: square1.y },
             { x: square1.x + square1.sideLength, y: square1.y },
             { x: square1.x, y: square1.y + square1.sideLength },
             { x: square1.x + square1.sideLength, y: square1.y + square1.sideLength }
         ];
-    
-        let cornersSquare2 = [
-            { x: square2.x, y: square2.y },
-            { x: square2.x + square2.sideLength, y: square2.y },
-            { x: square2.x, y: square2.y + square2.sideLength },
-            { x: square2.x + square2.sideLength, y: square2.y + square2.sideLength }
-        ];
-    
 
         let matchFound = false;
     
-        for (let i = 0; i < cornersSquare1.length; i++) {
-            if (isCornerInside(cornersSquare1[i], square2)) {
-                if (square1.colour == square2.colour) {
-                    console.log(i);
-                }
-                matchFound = true;
-            }
-        }
-    
-        for (let i = 0; i < cornersSquare2.length; i++) {
-            if (isCornerInside(cornersSquare2[i], square1)) {
-                if (square1.colour == square2.colour) {
-                    console.log(i);
-                }
+        for (let i = 0; i < cornersSquare.length; i++) {
+            if (isCornerInside(cornersSquare[i], square2)) {
                 matchFound = true;
             }
         }
