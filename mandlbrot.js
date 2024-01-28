@@ -10,7 +10,7 @@ for (let Px = 0; Px < c.width; Px++) {
         let x = 0.0;
         let y = 0.0;
         let iteration = 0;
-        let maxIteraction = 1000;
+        let maxIteraction = 200;
 
         while (x * x + y * y <= 2 * 2 && iteration < maxIteraction) {
             x = x * x - y * y + x0;
