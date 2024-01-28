@@ -1,35 +1,34 @@
 class Game {
-    constructor(canvas, context) {
+    constructor(canvas, context, constants) {
         this.canvas = canvas;
         this.context = context;
         this.balls = [];
         this.grids = [];
         this.gameLoop = this.gameLoop.bind(this);
-
-        this.gridSize = 50;
+        this.constants = constants;
     }
 
-    makeBalls(data) {
+    makeBalls() {
         // create all balls
-        for (let i = 0; i < data.numberOfBallsEachSide * 2; i++) {
-            let spacing = c.height / (data.numberOfBallsEachSide + 1);
-            let y = spacing * (i % data.numberOfBallsEachSide + 1);
+        for (let i = 0; i < this.constants.numberOfBallsEachSide * 2; i++) {
+            let spacing = c.height / (this.constants.numberOfBallsEachSide + 1);
+            let y = spacing * (i % this.constants.numberOfBallsEachSide + 1);
             let diff = 0;
-            
+
             let colour = 'black';
-    
+
             // doesn't work for odd numbers
-            if (i > (data.numberOfBallsEachSide / 2)) {
+            if (i > (this.constants.numberOfBallsEachSide / 2)) {
                 diff = c.width / 2;
                 colour = 'cyan';
             }
-    
+
             this.balls.push(new Ball(
                 (c.width / 4) + diff, // x
                 y, // y
-                { ...data.startingVelocity },
+                { ...this.constants.startingVelocity },
                 colour,
-                data.sideLength,
+                this.constants.gridSize,
                 this.canvas,
                 this.context
             ));
@@ -38,11 +37,11 @@ class Game {
 
     makeGrids() {
         // for every grid spot
-        for (let x = 0; x <= this.canvas.width; x += this.gridSize) {
-            for (let y = 0; y <= this.canvas.height; y += this.gridSize) {
-                this.grids.push(new GridSpot(x, y, (x < this.canvas.width / 2 ? 'cyan' : 'black'), this.canvas, this.context, this.gridSize));
+        for (let x = 0; x <= this.canvas.width; x += this.constants.gridSize) {
+            for (let y = 0; y <= this.canvas.height; y += this.constants.gridSize) {
+                this.grids.push(new GridSpot(x, y, (x < this.canvas.width / 2 ? 'cyan' : 'black'), this.canvas, this.context, this.constants.gridSize));
             }
-        }    
+        }
     }
 
     gameLoop() {
@@ -51,70 +50,75 @@ class Game {
         for (let grid of this.grids) {
             grid.draw();
         }
-    
+
         for (let i = 0; i < this.balls.length; i++) {
             let ball = this.balls[i];
-    
+
             // collision stuff
             if (ball.x + ball.sideLength > c.width || ball.y + ball.sideLength > c.height) {
                 if (ball.x + ball.sideLength > c.width) {
                     ball.velocity.x *= -1;
                     ball.x = c.width - ball.sideLength;
                 }
+
                 if (ball.y + ball.sideLength > c.height) {
                     ball.velocity.y *= -1;
                     ball.y = c.height - ball.sideLength;
                 }
             }
-    
+
             if (ball.x < 0 || ball.y < 0) {
                 if (ball.x < 0) {
                     ball.velocity.x *= -1;
                     ball.x = 0;
                 }
+
                 if (ball.y < 0) {
                     ball.velocity.y *= -1;
                     ball.y = 0;
                 }
             }
-    
+
             // general velocity stuff
             let dx = ball.velocity.x * 1;
             let dy = ball.velocity.y * 1;
-    
+
             ball.x += dx;
             ball.y += dy;
 
             // grid stuff (changing colour)
-            let gridIndex = this.getGridIndexThatBallIsOn(ball);
+            let gridIndices = this.getGridIndicesThatBallIsOn(ball);
 
-            if (gridIndex) {
-                console.log(this.grids[gridIndex].colour, ball.colour);
+            for (let gridIndex of gridIndices) {
                 if (this.grids[gridIndex].colour == ball.colour) {
-                    console.log('collision with ball with colour: ' + ball.colour); // why is this always just black, the cyan ball isn't  being picked up
+                    console.log('collision with ball with colour: ' + ball.colour);
                     // change grid colour
                     this.grids[gridIndex].colour = this.getOppositeColour(ball.colour);
-    
+            
                     // reverse velocity
                     ball.velocity.x *= -1;
                     ball.velocity.y *= -1;
-                }    
+                }
             }
 
             ball.draw();
         }
-    
+
         requestAnimationFrame(this.gameLoop);
     }
 
-    getGridIndexThatBallIsOn(ball) {
+    getGridIndicesThatBallIsOn(ball) {
+        let indices = [];
+    
         for (let i = 0; i < this.grids.length; i++) {
             let grid = this.grids[i];
-
-            if (ball.x >= grid.x && ball.x <= grid.x + this.gridSize && ball.y >= grid.y && ball.y <= grid.y + this.gridSize) {
-                return i;
+    
+            if (this.isIntersecting(ball, grid)) {
+                indices.push(i);
             }
         }
+    
+        return indices;
     }
 
     getOppositeColour(colour) {
@@ -124,4 +128,49 @@ class Game {
             return 'cyan'
         }
     }
+
+    isIntersecting(square1, square2) {
+        // simple AABB
+        function isCornerInside(corner, square) {
+            return corner.x >= square.x && corner.x <= square.x + square.sideLength && corner.y >= square.y && corner.y <= square.y + square.sideLength;
+        }
+    
+        let cornersSquare1 = [
+            { x: square1.x, y: square1.y },
+            { x: square1.x + square1.sideLength, y: square1.y },
+            { x: square1.x, y: square1.y + square1.sideLength },
+            { x: square1.x + square1.sideLength, y: square1.y + square1.sideLength }
+        ];
+    
+        let cornersSquare2 = [
+            { x: square2.x, y: square2.y },
+            { x: square2.x + square2.sideLength, y: square2.y },
+            { x: square2.x, y: square2.y + square2.sideLength },
+            { x: square2.x + square2.sideLength, y: square2.y + square2.sideLength }
+        ];
+    
+
+        let matchFound = false;
+    
+        for (let i = 0; i < cornersSquare1.length; i++) {
+            if (isCornerInside(cornersSquare1[i], square2)) {
+                if (square1.colour == square2.colour) {
+                    console.log(i);
+                }
+                matchFound = true;
+            }
+        }
+    
+        for (let i = 0; i < cornersSquare2.length; i++) {
+            if (isCornerInside(cornersSquare2[i], square1)) {
+                if (square1.colour == square2.colour) {
+                    console.log(i);
+                }
+                matchFound = true;
+            }
+        }
+    
+        return matchFound;
+    }    
+    
 }

@@ -6,6 +6,8 @@ class GridSpot {
         this.canvas = canvas;
         this.context = context;
         this.gridSize = gridSize;
+        
+        this.sideLength = gridSize; // oops
     }
 
     draw() {
